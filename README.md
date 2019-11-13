@@ -6,6 +6,15 @@ An MP3 audio codec written in TypeScript / MP3音频编解码器
 
 Otonashi是一个MP3编解码器学习研究项目，目标是使用TypeScript实现一个基本的 MPEG/Audio Layer 3 音频编解码器。仅追求符合标准并打通编解码流程，不追求音质和效率，不追求硬件实现。
 
+## 预备工作
+
+以下是正式开始实现MP3编解码器之前的一些学习探究工作，侧重可交互、可视化、原理验证。
+
+- [MDCT所使用的4种窗口及其转换](https://mikukonai.com/Otonashi/MDCT-windows.html)
+- [低通滤波](https://mikukonai.com/Otonashi/LPF.html)
+
 ## 文档
 
-[研究笔记](https://mikukonai.com/#/wiki/MP3%E7%BC%96%E8%A7%A3%E7%A0%81%E5%8E%9F%E7%90%86)
+`documentation`目录中保存有一些文档，可供参考。
+
+- [研究笔记](https://mikukonai.com/#/wiki/MP3%E7%BC%96%E8%A7%A3%E7%A0%81%E5%8E%9F%E7%90%86)

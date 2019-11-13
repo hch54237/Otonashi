@@ -4,62 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <title>Otonashi</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-        .Main {
-            width: 60%;
-            max-width: 800px;
-            margin: 50px auto;
-        }
-        canvas {
-            display: block;
-            margin: 20px auto;
-            width: 100%;
-        }
-        table {
-            font-size: 14px;
-            margin: 20px auto;
-        }
-        .InfoLeft  { text-align: right; font-weight: bold; }
-        .InfoRight { text-align: left; }
-
-        .ProcessbarContainer {
-            position: relative;
-            width: 100%;
-            border: 1px solid #66ccff;
-            height: 25px;
-        }
-
-        a {
-            color: inherit;
-            text-decoration: none;
-            border-bottom: 1px dotted #666;
-        }
-        a:hover{
-            color: #0066dd;
-            text-decoration:none;
-            border-bottom: 1px solid #0066dd;
-        }
-
-        button {
-            height:30px; line-height: 30px; font-size: 14px; border: none; border-radius: 5px;
-            color: #00aaff; border: 1px solid #e1f5ff; background-color: #e1f5ff; padding: 0 10px; }
-        button:hover { color: #00aaff; background-color: #cdeeff; border: 1px solid #cdeeff; }
-        button:active { color: #ffffff; background-color: #40bfff; border: 1px solid #40bfff; }
-        button:disabled { color: #888888; background-color: #eeeeee; border: 1px solid #eeeeee; }
-
-    </style>
+    <link rel="stylesheet" type="text/css" href="./style/style.css" charset="utf-8"/>
 </head>
 <body>
 <div class="Main">
-    <div style="font-size: 18px; margin: 20px 0; color: #222; font-weight: bold;">
-        MDCT所使用的4种窗口及其转换
+    <div class="Title">
+        🎵 Otonashi 预备工作：MDCT所使用的4种窗口及其转换
     </div>
 
-    <canvas id="osc" height="400px" width="600px"></canvas>
+    <div class="Block">
+        <canvas id="osc" height="300px" width="1024px"></canvas>
+    </div>
 
     <div style="text-align: center; font-size: 13px; color:#888888; margin: 20px auto; line-height: 20px;">
         <div><a href="https://github.com/mikukonai/Otonashi">Project Otonashi</a></div>
@@ -164,7 +119,6 @@ function SwitchWindow(isAttack) {
 
 currentWindow = SwitchWindow(false);
 currentWindow = SwitchWindow(false);
-currentWindow = SwitchWindow(false);
 currentWindow = SwitchWindow(true);
 currentWindow = SwitchWindow(true);
 currentWindow = SwitchWindow(true);
@@ -172,6 +126,11 @@ currentWindow = SwitchWindow(true);
 currentWindow = SwitchWindow(false);
 currentWindow = SwitchWindow(false);
 currentWindow = SwitchWindow(false);
+currentWindow = SwitchWindow(true);
+currentWindow = SwitchWindow(true);
+currentWindow = SwitchWindow(false);
+currentWindow = SwitchWindow(false);
+
 
 </script>
 
