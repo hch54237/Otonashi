@@ -13,8 +13,16 @@ Otonashi是一个MP3编解码器学习研究项目，目标是使用TypeScript�
 - [MDCT所使用的4种窗口及其转换](https://mikukonai.com/Otonashi/MDCT-windows.html)
 - [低通滤波](https://mikukonai.com/Otonashi/LPF.html)
 
-## 文档
+## 笔记和参考资料
 
-`documentation`目录中保存有一些文档，可供参考。
+研究笔记：
 
-- [研究笔记](https://mikukonai.com/#/wiki/MP3%E7%BC%96%E8%A7%A3%E7%A0%81%E5%8E%9F%E7%90%86)
+- [分析子带滤波器组](./documentation/notes/分析子带滤波器组.md)
+- [心理声学模型](./documentation/notes/心理声学模型.md)
+- [发表在博客上的研究笔记](https://mikukonai.com/#/wiki/MP3%E7%BC%96%E8%A7%A3%E7%A0%81%E5%8E%9F%E7%90%86)
+
+参考资料：
+
+- [ISO/IEC 11172-3 影印版本](./documentation/references/ISO-IEC-11172-3.pdf)（网上流传的版本以doc版本居多，其中很多公式的排版是乱的。这一版是影印版，似乎比较难找，因此放在这里，供有需要的同学取用。）
+- 其他参考资料请到`documentation/references`目录下查看。
+
