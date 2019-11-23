@@ -12,6 +12,7 @@ Otonashi是一个MP3编解码器学习研究项目，目标是使用TypeScript�
 
 - [MDCT所使用的4种窗口及其转换](https://mikukonai.com/Otonashi/MDCT-windows.html)
 - [低通滤波](https://mikukonai.com/Otonashi/LPF.html)
+- [分析子带滤波器组](https://mikukonai.com/Otonashi/Filterbank.html)
 
 ## 笔记和参考资料
 
