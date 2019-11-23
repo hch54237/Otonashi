@@ -5,7 +5,7 @@
 //       可以理解成一个512点的窗口从左向右滑过样本，每次滑动步进32点。窗口最右侧为0，最左侧为511，与输入序列**顺序相反**。窗口最右侧为实际的输入，其左侧为缓冲区。
 // 输出：长度为32的子带滤波结果，每一点代表每一频带在此32点时域窗口对应的时间点上的（降）采样值
 
-function AnalysisSubbandFilter(inputBuffer) { // def. @ p.67,78
+function BasicAnalysisSubbandFilter(inputBuffer) { // def. @ p.67,78
 
     // Window by 512 Coefficients (ANALYSIS_SUBBAND_FILTER_WINDOW_COEFFICIENTS[])
     let Z = new Array(); // length = 512
@@ -41,39 +41,41 @@ function AnalysisSubbandFilter(inputBuffer) { // def. @ p.67,78
 
 }
 
-////////////////////////////////////
-// 以下是模拟对于1帧节（granule）的分析子带滤波
-////////////////////////////////////
+// 输入：原始PCM序列；Granule（576点）起点index
+// 输出：32个频带的时域序列，每个序列36点
+function AnalysisSubbandFilter(PCMData, GranuleStartOffset) {
+    // 滑动窗口，对一帧节进行分析子带滤波
+    const STEP_LENGTH = 32;
+    let Outputs = new Array(); // 此数组存储36个子带滤波结果，每个结果有32点
+    for(let step = 1; step <= (GRANULE_LENGTH / STEP_LENGTH); step++) {
+        let offset = GranuleStartOffset + STEP_LENGTH * step;
+        let inputBuffer = new Array();
+        // 倒序从原始序列读取512个采样，原始序列第一个采样之前的值以0填充
+        for(let i = 0; i < 512; i++) {
+            let dataIndex = offset - i;
+            inputBuffer[i] = (dataIndex >= 0) ? PCMData[dataIndex] : 0;
+        }
+        // 滤波
+        let output = BasicAnalysisSubbandFilter(inputBuffer);
+        Outputs[step-1] = output;
+    }
+    // 将结果转换为32个频带的结果
+    let Subbands = new Array();
+    for(let i = 0; i < Outputs.length; i++) {
+        for(let j = 0; j < Outputs[i].length; j++) {
+            if(Subbands[j] === undefined) {
+                Subbands[j] = new Array();
+            }
+            Subbands[j][i] = Outputs[i][j];
+        }
+    }
+
+    return Subbands;
+}
 
 // 生成随机的帧节
 let DATA = new Array();
 for(let i = 0; i < GRANULE_LENGTH; i++) {
     DATA[i] = Math.floor(Math.random() * 65536 - 32768); // [-32768, 32768)
 }
-// 滑动窗口，对一帧节进行分析子带滤波
-let Outputs = new Array(); // 此数组存储36个子带滤波结果，每个结果有32点
-let STEP_LENGTH = 32;
-for(let step = 1; step <= (GRANULE_LENGTH / STEP_LENGTH); step++) {
-    let offset = STEP_LENGTH * step;
-    let inputBuffer = new Array();
-    // 倒序从原始序列读取512个采样，原始序列第一个采样之前的值以0填充
-    for(let i = 0; i < 512; i++) {
-        let dataIndex = offset - i;
-        inputBuffer[i] = (DATA[dataIndex] !== undefined) ? DATA[dataIndex] : 0;
-    }
-    // 滤波
-    let output = AnalysisSubbandFilter(inputBuffer);
-    Outputs[step-1] = output;
-}
-// 将结果转换为32个频带的结果
-let Subbands = new Array();
-for(let i = 0; i < Outputs.length; i++) {
-    for(let j = 0; j < Outputs[i].length; j++) {
-        if(Subbands[j] === undefined) {
-            Subbands[j] = new Array();
-        }
-        Subbands[j][i] = Outputs[i][j];
-    }
-}
 
-console.log(Subbands);

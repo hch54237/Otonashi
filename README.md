@@ -23,6 +23,6 @@ Otonashi是一个MP3编解码器学习研究项目，目标是使用TypeScript�
 
 参考资料：
 
-- [ISO/IEC 11172-3 影印版本](./documentation/references/ISO-IEC-11172-3.pdf)（网上流传的版本以doc版本居多，其中很多公式的排版是乱的。这一版是影印版，似乎比较难找，因此放在这里，供有需要的同学取用。）
+- [ISO/IEC 11172-3 影印版本](./documentation/references/ISO-IEC-11172-3.pdf)
 - 其他参考资料请到`documentation/references`目录下查看。
 
