@@ -19,12 +19,13 @@ function SpreadingFunction(i, j) {
     let x = 8 * Math.min((tmpx - 0.5) * (tmpx - 0.5) - 2 * (tmpx - 0.5), 0);
     // LayerIII的tmpy有变化，详见 @reference C.1.5.3.2.1(p80)
     // let tmpy = 15.811389 + 7.5 * (tmpx + 0.474) - 17.5 * Math.sqrt(1.0 + (tmpx + 0.474) * (tmpx + 0.474));
-    let tmpy = (j >= i) ? (3.0 * (j - i)) : (1.5 * (j - i));
+    // TODO 此处存疑，标准原文的(3.0 * (j - i))似乎应为(3.0 * (i - j))，曲线形状才合理。
+    let tmpy = (j >= i) ? (3.0 * (i - j)) : (1.5 * (j - i));
     if(tmpy < -100) {
         return 0;
     }
     else {
-        let result = Math.pow((x + tmpy) / 10, 10);
+        let result = Math.pow(10, (x + tmpy) / 10);
         return (result < 1e-6) ? 0 : result; // 根据 @reference C.1.5.3.2.1(p80)，凡是小于1e-6的值均设为0
     }
 }
