@@ -7,6 +7,11 @@ const FRAME_LENGTH = 1152;
 
 const SAMPLE_RATES = [32000, 44100, 48000];
 
+const WINDOW_NORMAL = 0;
+const WINDOW_START  = 1;
+const WINDOW_SHORT  = 2;
+const WINDOW_STOP   = 3;
+
 const SYSTEM_CONSTANT = 210; // Subclause 2.4.3.4.7.1 @ p.35
 
 
