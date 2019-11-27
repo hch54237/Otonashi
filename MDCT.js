@@ -59,3 +59,83 @@ function MDCT(input, length) {
     }
     return output;
 }
+
+
+function CalculateGranuleMDCT(currentGranuleSubbands, prevGranuleSubbands, windowType) {
+    if(windowType === WINDOW_NORMAL ||
+       windowType === WINDOW_START  ||
+       windowType === WINDOW_STOP )
+    {
+        // 对每个子带进行处理，最后将每个子带的结果拼接成1个576点的长块频谱
+        let LongBlockSpectrum = new Array();
+        for(let sbindex = 0; sbindex < 32; sbindex++) {
+            let currentGranule = currentGranuleSubbands[sbindex];
+            let prevGranule = prevGranuleSubbands[sbindex];
+            // 加窗
+            let windowedMdctInput = new Array();
+            let windowFunction = (windowType === WINDOW_NORMAL) ? WindowNormal :
+                                 (windowType === WINDOW_START)  ? WindowStart :
+                                 (windowType === WINDOW_STOP)   ? WindowStop : undefined;
+            for(let i = 0; i < 36; i++) {
+                windowedMdctInput[i] = (i < 18) ? (prevGranule[i] * windowFunction(i)) :
+                                                  (currentGranule[i-18] * windowFunction(i));
+            }
+            // MDCT
+            let mdctOutput = MDCT(windowedMdctInput, 36);
+            // 拼接到长块频谱上
+            LongBlockSpectrum = LongBlockSpectrum.concat(mdctOutput);
+        }
+        return [LongBlockSpectrum];
+    }
+    else if(windowType === WINDOW_SHORT) {
+        // 对每个子带进行处理，将每个子带的结果拼接成三个192点的短块频谱
+        let ShortBlockSpectrums = new Array();
+            ShortBlockSpectrums[0] = new Array();
+            ShortBlockSpectrums[1] = new Array();
+            ShortBlockSpectrums[2] = new Array();
+        for(let sbindex = 0; sbindex < 32; sbindex++) {
+            let currentGranule = currentGranuleSubbands[sbindex];
+            let prevGranule = prevGranuleSubbands[sbindex];
+            // 处理三个按时间顺序排列的短块
+            for(let shortBlockCount = 0; shortBlockCount < 3; shortBlockCount++) {
+                // 截取短块
+                let currentShortBlock = currentGranule.slice(12 + shortBlockCount * 6, 12 + (shortBlockCount + 1) * 6);
+                let prevShortBlock = prevGranule.slice(12 + shortBlockCount * 6, 12 + (shortBlockCount + 1) * 6);
+                // 加窗并MDCT
+                let shortWindowedMdctInput = new Array();
+                for(let i = 0; i < 12; i++) {
+                    shortWindowedMdctInput[i] = (i < 6) ? (prevShortBlock[i] * WindowShort(i)) : (currentShortBlock[i-6] * WindowShort(i));
+                }
+                let shortMdctOutput = MDCT(shortWindowedMdctInput, 12);
+                // 拼接到第 shortBlockCount 个短块频谱上
+                ShortBlockSpectrums[shortBlockCount] = ShortBlockSpectrums[shortBlockCount].concat(shortMdctOutput);
+            }
+        }
+        return ShortBlockSpectrums;
+    }
+}
+
+
+function ReduceAliasing(longBlockSpectrum) {
+    let input = longBlockSpectrum;
+    let output = new Array();
+    // 首先以input初始化output
+    for(let i = 0; i < GRANULE_LENGTH; i++) {
+        output[i] = input[i];
+    }
+    // 每两个长块（18点子序列）之间执行蝶形结，共31个交叠间隙
+    for(let i = 1; i < GRANULE_LENGTH / 18; i++) { // 1~31（从1开始）
+        let indexA = 18 * i - 1;
+        let indexB = 18 * i;
+        // 每个交叠间隙执行8个蝶形结
+        for(let butterfly = 0; butterfly < 8; butterfly++) {
+            let inputA = input[indexA];
+            let inputB = input[indexB];
+            output[indexA] =  inputA * ALIASING_CS[butterfly] + inputB * ALIASING_CA[butterfly];
+            output[indexB] = -inputA * ALIASING_CA[butterfly] + inputB * ALIASING_CS[butterfly];
+            indexA--;
+            indexB++;
+        }
+    }
+    return output;
+}
