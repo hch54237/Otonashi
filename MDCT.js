@@ -60,62 +60,12 @@ function MDCT(input, length) {
     return output;
 }
 
-
-function CalculateGranuleMDCT(currentGranuleSubbands, prevGranuleSubbands, windowType) {
-    if(windowType === WINDOW_NORMAL ||
-       windowType === WINDOW_START  ||
-       windowType === WINDOW_STOP )
-    {
-        // 对每个子带进行处理，最后将每个子带的结果拼接成1个576点的长块频谱
-        let LongBlockSpectrum = new Array();
-        for(let sbindex = 0; sbindex < 32; sbindex++) {
-            let currentGranule = currentGranuleSubbands[sbindex];
-            let prevGranule = prevGranuleSubbands[sbindex];
-            // 加窗
-            let windowedMdctInput = new Array();
-            let windowFunction = (windowType === WINDOW_NORMAL) ? WindowNormal :
-                                 (windowType === WINDOW_START)  ? WindowStart :
-                                 (windowType === WINDOW_STOP)   ? WindowStop : undefined;
-            for(let i = 0; i < 36; i++) {
-                windowedMdctInput[i] = (i < 18) ? (prevGranule[i] * windowFunction(i)) :
-                                                  (currentGranule[i-18] * windowFunction(i));
-            }
-            // MDCT
-            let mdctOutput = MDCT(windowedMdctInput, 36);
-            // 拼接到长块频谱上
-            LongBlockSpectrum = LongBlockSpectrum.concat(mdctOutput);
-        }
-        return [LongBlockSpectrum];
-    }
-    else if(windowType === WINDOW_SHORT) {
-        // 对每个子带进行处理，将每个子带的结果拼接成三个192点的短块频谱
-        let ShortBlockSpectrums = new Array();
-            ShortBlockSpectrums[0] = new Array();
-            ShortBlockSpectrums[1] = new Array();
-            ShortBlockSpectrums[2] = new Array();
-        for(let sbindex = 0; sbindex < 32; sbindex++) {
-            let currentGranule = currentGranuleSubbands[sbindex];
-            let prevGranule = prevGranuleSubbands[sbindex];
-            // 处理三个按时间顺序排列的短块
-            for(let shortBlockCount = 0; shortBlockCount < 3; shortBlockCount++) {
-                // 截取短块
-                let currentShortBlock = currentGranule.slice(12 + shortBlockCount * 6, 12 + (shortBlockCount + 1) * 6);
-                let prevShortBlock = prevGranule.slice(12 + shortBlockCount * 6, 12 + (shortBlockCount + 1) * 6);
-                // 加窗并MDCT
-                let shortWindowedMdctInput = new Array();
-                for(let i = 0; i < 12; i++) {
-                    shortWindowedMdctInput[i] = (i < 6) ? (prevShortBlock[i] * WindowShort(i)) : (currentShortBlock[i-6] * WindowShort(i));
-                }
-                let shortMdctOutput = MDCT(shortWindowedMdctInput, 12);
-                // 拼接到第 shortBlockCount 个短块频谱上
-                ShortBlockSpectrums[shortBlockCount] = ShortBlockSpectrums[shortBlockCount].concat(shortMdctOutput);
-            }
-        }
-        return ShortBlockSpectrums;
-    }
-}
-
-
+/**
+ * @description 去混叠蝶形结运算（仅用于长块频谱）
+ * @reference Fig.A.5(p96) Table.B.9(p65) C.1.5.3.3(p96-97) Fig.C.8(p97)
+ * @input  longBlockSpectrum - 由MDCT输出的576点长块频谱（窗口类型：Normal、Start、Stop）
+ * @output 经蝶形运算的576点长块频谱
+ */
 function ReduceAliasing(longBlockSpectrum) {
     let input = longBlockSpectrum;
     let output = new Array();
@@ -139,3 +89,70 @@ function ReduceAliasing(longBlockSpectrum) {
     }
     return output;
 }
+
+/**
+ * @description 计算一个Granule的频谱输出，含MDCT和去混叠（仅长块）
+ * @reference C.1.5.3.3(p96-97)
+ * @input  currentGranuleSubbands - 当前Granule的分析子带滤波器输出：[SB0[18]..SB31[18]]
+ * @input  prevGranuleSubbands - 时域的前一个Granule的分析子带滤波器输出：[SB0[18]..SB31[18]]
+ * @input  windowType - PAM2提供的窗口类型：枚举值 WINDOW_NORMAL | WINDOW_START | WINDOW_SHORT | WINDOW_STOP
+ * @output 频谱（数组），结果分为长块|短块两类。长块结果为[576点长块频谱]；短块结果为[192点短块频谱0, 192点短块频谱1, 192点短块频谱2]，三者按照时域时间顺序排列。
+ */
+function CalculateGranuleSpectrum(currentGranuleSubbands, prevGranuleSubbands, windowType) {
+    if(windowType === WINDOW_NORMAL ||
+       windowType === WINDOW_START  ||
+       windowType === WINDOW_STOP )
+    {
+        // 对每个子带进行处理，最后将每个子带的结果拼接成1个576点的长块频谱
+        let LongBlockSpectrum = new Array();
+        for(let sbindex = 0; sbindex < 32; sbindex++) {
+            let currentGranule = currentGranuleSubbands[sbindex];
+            let prevGranule = prevGranuleSubbands[sbindex];
+            // 加窗
+            let windowedMdctInput = new Array();
+            let windowFunction = (windowType === WINDOW_NORMAL) ? WindowNormal :
+                                 (windowType === WINDOW_START)  ? WindowStart :
+                                 (windowType === WINDOW_STOP)   ? WindowStop : undefined;
+            for(let i = 0; i < 36; i++) {
+                windowedMdctInput[i] = (i < 18) ? (prevGranule[i] * windowFunction(i)) :
+                                                  (currentGranule[i-18] * windowFunction(i));
+            }
+            // MDCT
+            let mdctOutput = MDCT(windowedMdctInput, 36);
+            // 拼接到长块频谱上
+            LongBlockSpectrum = LongBlockSpectrum.concat(mdctOutput);
+        }
+        // 对长块频谱作去混叠蝶形结运算
+        let LongBlockSpectrumWithoutAliasing = ReduceAliasing(LongBlockSpectrum);
+        return [LongBlockSpectrumWithoutAliasing];
+    }
+    else if(windowType === WINDOW_SHORT) {
+        // 对每个子带进行处理，将每个子带的结果拼接成三个192点的短块频谱
+        let ShortBlockSpectrums = new Array();
+            ShortBlockSpectrums[0] = new Array();
+            ShortBlockSpectrums[1] = new Array();
+            ShortBlockSpectrums[2] = new Array();
+        for(let sbindex = 0; sbindex < 32; sbindex++) {
+            let currentGranule = currentGranuleSubbands[sbindex];
+            let prevGranule = prevGranuleSubbands[sbindex];
+            let frame = currentGranule.concat(prevGranule);
+            // 处理三个按时间顺序排列的短块
+            for(let shortBlockCount = 0; shortBlockCount < 3; shortBlockCount++) {
+                // 截取短块（长度为12）
+                let shortBlock = frame.slice((shortBlockCount + 1) * 6, (shortBlockCount + 1) * 6 + 12);
+                // 加窗并MDCT
+                let shortWindowedMdctInput = new Array();
+                for(let i = 0; i < 12; i++) {
+                    shortWindowedMdctInput[i] = shortBlock[i-6] * WindowShort(i);
+                }
+                let shortMdctOutput = MDCT(shortWindowedMdctInput, 12);
+                // 拼接到第 shortBlockCount 个短块频谱上
+                ShortBlockSpectrums[shortBlockCount] = ShortBlockSpectrums[shortBlockCount].concat(shortMdctOutput);
+            }
+        }
+        return ShortBlockSpectrums;
+    }
+}
+
+
+

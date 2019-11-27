@@ -42,11 +42,11 @@ function BasicAnalysisSubbandFilter(inputBuffer) { // def. @ p.67,78
 }
 
 // 输入：原始PCM序列；Granule（576点）起点index
-// 输出：32个频带的时域序列，每个序列36点
+// 输出：32个频带的时域序列，每个序列18点
 function AnalysisSubbandFilter(PCMData, GranuleStartOffset) {
     // 滑动窗口，对一帧节进行分析子带滤波
     const STEP_LENGTH = 32;
-    let Outputs = new Array(); // 此数组存储36个子带滤波结果，每个结果有32点
+    let Outputs = new Array(); // 此数组存储18个子带滤波结果，每个结果有32点
     for(let step = 1; step <= (GRANULE_LENGTH / STEP_LENGTH); step++) {
         let offset = GranuleStartOffset + STEP_LENGTH * step;
         let inputBuffer = new Array();
@@ -71,11 +71,5 @@ function AnalysisSubbandFilter(PCMData, GranuleStartOffset) {
     }
 
     return Subbands;
-}
-
-// 生成随机的帧节
-let DATA = new Array();
-for(let i = 0; i < GRANULE_LENGTH; i++) {
-    DATA[i] = Math.floor(Math.random() * 65536 - 32768); // [-32768, 32768)
 }
 
