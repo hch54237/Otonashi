@@ -53,7 +53,7 @@ function AnalysisSubbandFilter(PCMData, GranuleStartOffset) {
         // 倒序从原始序列读取512个采样，原始序列第一个采样之前的值以0填充
         for(let i = 0; i < 512; i++) {
             let dataIndex = offset - i;
-            inputBuffer[i] = (dataIndex >= 0) ? PCMData[dataIndex] : 0;
+            inputBuffer[i] = (dataIndex >= 0 && dataIndex < PCMData.length) ? PCMData[dataIndex] : 0;
         }
         // 滤波
         let output = BasicAnalysisSubbandFilter(inputBuffer);
