@@ -4,7 +4,15 @@ An MP3 audio codec written in TypeScript / MP3音频编解码器
 
 ## 介绍
 
-Otonashi是一个MP3编解码器学习研究项目，目标是使用TypeScript实现一个基本的 MPEG/Audio Layer 3 音频编解码器。仅追求符合标准并打通编解码流程，不追求音质和效率，不追求硬件实现。
+Otonashi是一个MP3编解码器学习研究项目，目标是使用TypeScript实现一个可用的 MPEG-1/Audio Layer 3 音频编解码器。
+
+## 研究方针
+
+- 跳过 Layer 1 和 Layer 2，直接实现 Layer 3（即MP3）。跳过第一心理声学模型，直接实现第二心理声学模型。
+- 自底向上，实现驱动的研究。先实现标准要求的算法，再研究算法背后的理论原理（尤其是PAM部分）。
+- 忽略可选的、不重要的特性。
+- 代码即文档。
+- 不设计划，不设时间表。
 
 ## 预备工作
 
