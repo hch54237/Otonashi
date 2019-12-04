@@ -85,7 +85,7 @@ function PartitionQuantizedSpectrum(qspect) {
     }
     // 零值区起点向后移动，使小值区长度(zerosStartIndex - smallvaluesStartIndex)为4的倍数
     while(((zerosStartIndex - smallvaluesStartIndex) & 3) > 0) {
-        smallvaluesStartIndex++;
+        zerosStartIndex++;
     }
     // 如果零值区起点超过了频谱宽度，说明零值区的长度不足2，则将小值区起点向后移动两位
     // 例如 .. 3 2|0 0 0 0 1 0 - -|
