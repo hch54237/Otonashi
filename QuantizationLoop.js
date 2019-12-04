@@ -123,5 +123,153 @@ function HuffmanEncodeQuantizedSpectrum(qspect) {
 
     // 按照C.1.5.3.7提供的步骤，输出符合2.4.1.7规定的Huffmancodebits二进制序列，供内圈循环计算量化频谱的Huffman码长。
     // 同时保留边信息（码表选择信息等），待外圈循环和帧循环确定 尺度因子、scfsi、量化步长、预加重标识 等信息后，输出最终的一帧编码。
+    let Bigvalues = -1,
+        BigvalueTableSelect = new Array(),
+        Region0Count = -1,
+        Region1Count = -1,
+        SmallvalueTableSelect = 0;
+
+    // 首先检查最大值是否超过 8191+15=8206，如果超过，则返回null
+    for(let i = 0; i < qspect.length; i++) {
+        if(qspect[i] > 8206) return null;
+    }
+
+    // 对量化后的频谱分区
+    let partition = PartitionQuantizedSpectrum(qspect);
+    let BigvaluesPartition = partition.bigvalues;
+    let SmallvaluesPartition = partition.smallvalues;
+
+    Bigvalues = (BigvaluesPartition[1] - BigvaluesPartition[0]) / 2;
+
+    let SFBands = ScaleFactorBands[SAMPLE_RATE_44100][LONG_BLOCK];
+    let BigvaluesCodeString = "", SmallvaluesCodeString = "";
+    // 处理大值区
+    if(BigvaluesPartition[1] > 0) {
+        // 确定大值区的尺度因子频带数目，计算分割点
+        let LastSFBIndexOfBigvalues = -1;
+        let BigvaluesEndIndex = BigvaluesPartition[1] - 1;
+        for(let sfb = 0; sfb < SFBands.length; sfb++) {
+            let sfbPartition = SFBands[sfb];
+            if(BigvaluesEndIndex > 0 && BigvaluesEndIndex >= sfbPartition[0] && BigvaluesEndIndex <= sfbPartition[1]) {
+                LastSFBIndexOfBigvalues = sfb;
+                break;
+            }
+        }
+
+        let SFBNumberInBigvalues = LastSFBIndexOfBigvalues + 1;
+        let Region0_SFBNum = Math.round(SFBNumberInBigvalues / 3); // 注意：作为sideinfo的值应减1
+        let Region1_SFBNum = SFBNumberInBigvalues - Math.round(SFBNumberInBigvalues / 4) - Region0_SFBNum;
+        let Region2_SFBNum = SFBNumberInBigvalues - Region0_SFBNum - Region1_SFBNum;
+
+        Region0Count = Region0_SFBNum - 1;
+        if(Region1_SFBNum <= 0) {
+            Region1_SFBNum = Region2_SFBNum;
+            Region2_SFBNum = 0;
+            Region1Count = Region1_SFBNum - 1;
+        }
+
+        let region01 = SFBands[Region0_SFBNum][0]; // Region 1 的起点
+        let region12 = SFBands[Region0_SFBNum + Region1_SFBNum][0]; // Region 2 的起点
+
+        // 计算每个region的最大值，并选取Huffman编码表
+        let MaxValue0 = -1, MaxValue1 = -1, MaxValue2 = -1;
+        for(let i = 0; i < region01; i++) {
+            if(qspect[i] > MaxValue0) { MaxValue0 = qspect[i]; }
+        }
+        for(let i = region01; i < region12; i++) {
+            if(qspect[i] > MaxValue1) { MaxValue1 = qspect[i]; }
+        }
+        for(let i = region12; i < BigvaluesPartition[1]; i++) {
+            if(qspect[i] > MaxValue2){ MaxValue2 = qspect[i]; }
+        }
+
+        let tableSelect0 = -1, tableSelect1 = -1, tableSelect2 = -1;
+        for(let i = 0; i < HuffmanTableDuple.length; i++) {
+            let huffmanTableMaxValue = Math.pow(2, HuffmanTableDuple[i].linbits) - 1 + 15;
+            if(tableSelect0 < 0 && MaxValue0 < huffmanTableMaxValue) { tableSelect0 = i; }
+            if(tableSelect1 < 0 && MaxValue1 < huffmanTableMaxValue) { tableSelect1 = i; }
+            if(tableSelect2 < 0 && MaxValue2 < huffmanTableMaxValue) { tableSelect2 = i; }
+            // 如果所有的表格都已确定，则终止循环
+            if(tableSelect0 >= 0 && tableSelect1 >= 0 && tableSelect2 >= 0) break;
+        }
+
+        BigvalueTableSelect[0] = tableSelect0;
+        BigvalueTableSelect[1] = tableSelect1;
+        BigvalueTableSelect[2] = tableSelect2;
+
+        // 按照格式对大值区进行编码
+        let codeString0 = "", codeString1 = "", codeString = "";
+        for(let i = 0; i < region01; i += 2) {
+            let x = qspect[i], y = qspect[i+1];
+            let huffman = EncodeDuple(x, y, tableSelect0);
+            codeString0 += String(huffman.huffmanCode);
+            if(huffman.linbitsX !== null) { codeString0 += String(huffman.linbitsX); }
+            if(x !== 0) { codeString0 += String((x > 0) ? "1" : "0"); }
+            if(huffman.linbitsY !== null) { codeString0 += String(huffman.linbitsY); }
+            if(y !== 0) { codeString0 += String((y > 0) ? "1" : "0"); }
+        }
+        for(let i = region01; i < region12; i += 2) {
+            let x = qspect[i], y = qspect[i+1];
+            let huffman = EncodeDuple(x, y, tableSelect1);
+            codeString1 += String(huffman.huffmanCode);
+            if(huffman.linbitsX !== null) { codeString1 += String(huffman.linbitsX); }
+            if(x !== 0) { codeString1 += String((x > 0) ? "1" : "0"); }
+            if(huffman.linbitsY !== null) { codeString1 += String(huffman.linbitsY); }
+            if(y !== 0) { codeString1 += String((y > 0) ? "1" : "0"); }
+        }
+        for(let i = region12; i < BigvaluesPartition[i]; i += 2) {
+            let x = qspect[i], y = qspect[i+1];
+            let huffman = EncodeDuple(x, y, tableSelect2);
+            codeString2 += String(huffman.huffmanCode);
+            if(huffman.linbitsX !== null) { codeString2 += String(huffman.linbitsX); }
+            if(x !== 0) { codeString2 += String((x > 0) ? "1" : "0"); }
+            if(huffman.linbitsY !== null) { codeString2 += String(huffman.linbitsY); }
+            if(y !== 0) { codeString2 += String((y > 0) ? "1" : "0"); }
+        }
+
+        BigvaluesCodeString = String(codeString0) + String(codeString1) + String(codeString2);
+    }
+
+    // 处理小值区
+    if(SmallvaluesPartition[1] > SmallvaluesPartition[0]) {
+        let codeStringA = "", codeStringB = "";
+        // 分别使用两个码表进行编码，计算编码长度
+        for(let i = SmallvaluesPartition[0]; i < SmallvaluesPartition[1]; i += 4) {
+            let v = qspect[i], w = qspect[i+1], x = qspect[i+2], y = qspect[i+3];
+            codeStringA = EncodeQuadruple(v, w, x, y, 0);
+            if(v !== 0) { codeStringA += String((v > 0) ? "1" : "0"); }
+            if(w !== 0) { codeStringA += String((w > 0) ? "1" : "0"); }
+            if(x !== 0) { codeStringA += String((x > 0) ? "1" : "0"); }
+            if(y !== 0) { codeStringA += String((y > 0) ? "1" : "0"); }
+
+            codeStringB = EncodeQuadruple(v, w, x, y, 1);
+            if(v !== 0) { codeStringB += String((v > 0) ? "1" : "0"); }
+            if(w !== 0) { codeStringB += String((w > 0) ? "1" : "0"); }
+            if(x !== 0) { codeStringB += String((x > 0) ? "1" : "0"); }
+            if(y !== 0) { codeStringB += String((y > 0) ? "1" : "0"); }
+        }
+
+        if(codeStringA.length <= codeStringB.length) {
+            SmallvaluesCodeString = codeStringA;
+            SmallvalueTableSelect = 0;
+        }
+        else {
+            SmallvaluesCodeString = codeStringB;
+            SmallvalueTableSelect = 1;
+        }
+    }
+
+    // 将大值区和小值区编码拼接起来
+    let HuffmanCodeString = BigvaluesCodeString + SmallvaluesCodeString;
+
+    return {
+        "CodeString": HuffmanCodeString,
+        "Bigvalues": Bigvalues,
+        "BigvalueTableSelect": BigvalueTableSelect,
+        "Region0Count": Region0Count,
+        "Region1Count": Region1Count,
+        "SmallvalueTableSelect": SmallvalueTableSelect
+    };
+
 }
 
