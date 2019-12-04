@@ -7,12 +7,20 @@ const FRAME_LENGTH = 1152;
 
 const SAMPLE_RATES = [32000, 44100, 48000];
 
+/** 用于表格索引 */
+const SAMPLE_RATE_32000 = 0;
+const SAMPLE_RATE_44100 = 0;
+const SAMPLE_RATE_48000 = 0;
+
+const LONG_BLOCK  = 0;
+const SHORT_BLOCK = 1;
+
 const WINDOW_NORMAL = 0;
 const WINDOW_START  = 1;
 const WINDOW_SHORT  = 2;
 const WINDOW_STOP   = 3;
 
-const SYSTEM_CONSTANT = 210; // Subclause 2.4.3.4.7.1 @ p.35
+const SYSTEM_CONSTANT = 8; // Subclause 2.4.3.4.7.1 @ p.35
 
 
 
@@ -167,3 +175,25 @@ const ALIASING_REDUCTION_COEFFICIENTS = [-0.6, -0.535, -0.33, -0.185, -0.095, -0
 const ALIASING_CS = [0.8574929257125443, 0.8817419973177052, 0.9496286491027328, 0.9833145924917902, 0.9955178160675858, 0.9991605581781475, 0.9998991952444471, 0.9999931550702803];
 const ALIASING_CA = [-0.5144957554275266, -0.47173196856497235, -0.31337745420390184, -0.18191319961098118, -0.09457419252642066, -0.04096558288530405, -0.01419856857247115, -0.0036999746737600373];
 
+/**
+ * 尺度因子频带划分表
+ * @reference Table.B.8(p62)
+ */
+const ScaleFactorBands = [
+    // 32kHz
+    [],
+    // 44.1kHz
+    [
+        // Long Blocks
+        [
+            /* 00 */ [0, 3],
+            /* 01 */ [4, 7],
+        ],
+        // Short Blocks
+        [
+            /* 00 */ [0, 3]
+        ]
+    ],
+    // 48kHz
+    []
+];
